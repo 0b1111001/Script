@@ -1,30 +1,49 @@
 import os
 import pyzipper
 
-def zip_folder_with_password(folder_path, output_zip, password):
-    """
-    Zips a folder with a password.
+password = {
+    "VII-01" : "hello",
+    "VII-02" : "world",
+}
 
-    :param folder_path: Path to the folder to zip
-    :param output_zip: Output zip file name (with .zip extension)
-    :param password: Password for the zip file
+def zip_folder_with_password(folder_path, zip_name=None, password=None):
     """
-    with pyzipper.AESZipFile(output_zip, 'w', compression=pyzipper.ZIP_LZMA) as zip_file:
-        zip_file.setpassword(password.encode('utf-8'))
-        zip_file.setencryption(pyzipper.WZ_AES)
+    Zips the specified folder into a password-protected .zip file.
+
+    Args:
+        folder_path (str): The path to the folder to be zipped.
+        zip_name (str, optional): The name of the resulting zip file. Defaults to the folder name with '.zip'.
+        password (str, optional): The password for the zip file. If None, no password will be set.
+    """
+    # Default zip name to folder name with .zip
+    if zip_name is None:
+        zip_name = os.path.basename(folder_path.rstrip(os.sep)) + ".zip"
+    
+    # Convert password to bytes
+    password_bytes = password.encode() if password else None
+
+    # Create the zip file
+    with pyzipper.AESZipFile(zip_name, 'w', compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as zipf:
+        if password_bytes:
+            zipf.setpassword(password_bytes)
         
         for root, dirs, files in os.walk(folder_path):
-            print(root,dirs,files)
             for file in files:
+                # Create the complete filepath
                 file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, start=folder_path)
-                zip_file.write(file_path, arcname)
+                prin(file_path)
+                # Add file to the zip, preserving the 'Outer Folder' structure
+                arcname = os.path.relpath(file_path, start=os.path.dirname(folder_path))
+                zipf.write(file_path, arcname)
+    
+        print(f"Folder '{folder_path}' has been zipped as '{zip_name}' with password protection.")
 
-    print(f"Folder '{folder_path}' has been zipped into '{output_zip}' with a password.")
 
-# Example usage
-folder_to_zip = "testing"
-output_zip_file = "protected_folder.zip"
-password = "mypassword123"
+n = input("Input the path : ").replace("\"","")
+os.chdir(n)
 
-zip_folder_with_password(folder_to_zip, output_zip_file, password)
+for key in password:
+    # Example Usage
+    folder_to_zip = key  # Replace with your folder path
+    zip_password = password[key]  # Replace with your desired password
+    zip_folder_with_password(folder_to_zip, password=zip_password)
